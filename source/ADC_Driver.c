@@ -1,6 +1,6 @@
 #include "ADC_Driver.h"
 #include "MKL27Z644.h"
-
+//ADC0_SE5b selected
 void ADC_vfnDriverInit(void){
 	SIM->SCGC6 |= SIM_SCGC6_ADC0_MASK; //Enciende el ADC0
 	SIM->SOPT7=SIM_SOPT7_ADC0PRETRGSEL(0);//trigger select
@@ -14,6 +14,11 @@ void ADC_vfnDriverInit(void){
 	ADC0->SC2=ADC_SC2_ADTRG(0); //Software Trigger Select
 	ADC0->SC3=ADC_SC3_AVGE(1); //Hardware Average Enable
 	ADC0->SC3=ADC_SC3_AVGS(3); //16 samples averaged
+}
+
+void ADC_vfnADCPortInit(){
+	SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK;
+	PORTB->PCR[2]=PORT_PCR_MUX(0);
 }
 
 uint_8 ADC_bfnReadADC(uint_8 bChannel,uint_16 * bpADCValue){

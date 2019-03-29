@@ -17,6 +17,10 @@ uint_8 COMM_bfnSendMsg (uint_8* bpMsgToSend, uint_8 bMsgSize)
                     checksum--;
                     bMsgSize--;
             }
+            else
+            {
+            	//No se pudo mandar el msg y se reintentara
+            }
     }
 
     if(checksum == 0)

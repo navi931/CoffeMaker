@@ -5,7 +5,7 @@
 #define ERROR 0
 #define LUGARES 19	//Puerto B 19
 #include "MKL27Z644.h"
-#include "types.h"
+#include "tools.h"
 uint_8 SetGpio(uint_8 prender);
 void InitGPIO(void);
 void ToggleGPIO(void);

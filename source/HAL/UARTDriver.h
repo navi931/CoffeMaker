@@ -6,7 +6,7 @@
 #define UART_BAUD_OSR 15
 #define SEL_CLK 8000000
 #include "MKL27Z644.h"
-#include "types.h"
+#include "tools.h"
 void UART_vfnDriverInit(void);
 void UART_vfnDriverInitPorts(void);
 uint_8 UART_bfnSend(uint_8 valor);

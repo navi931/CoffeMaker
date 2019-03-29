@@ -63,6 +63,10 @@ uint_8 UART_bfnSend(uint_8 valor)
 	        LPUART0->DATA=valor;
 	        state = SUCCESS;
 	 }
+	 else
+	 {
+		 //Pasa un error por que se pudo mandar el el dato de por UART
+	 }
 	 return state;
 }
 uint_8 UART_bfnRead(uint_8* valor)
@@ -74,6 +78,10 @@ uint_8 UART_bfnRead(uint_8* valor)
 	        	*valor=LPUART0->DATA;
 	        	LPUART0->DATA=0;
 	        	state = SUCCESS;
+	}
+	else
+	{
+		//Pasa un error por que se pudo leer el el dato de UART
 	}
 	return state;
 }

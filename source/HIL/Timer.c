@@ -49,6 +49,10 @@ void getTime(uint_8 * get_hour,uint_8 * get_minutes,uint_8 * get_seconds,uint_8 
 	{
 		*time = *time + 1;
 	}
+	else
+	{
+		//No ha pasado el tiempo necesario para aumetar el time
+	}
 	*get_hour = hours;
 	*get_minutes = minutes;
 	*get_seconds = seconds;

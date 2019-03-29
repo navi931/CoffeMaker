@@ -1,5 +1,3 @@
-
-#include "MKL27Z644.h"
 #include "ADC_Driver.h"
 #include "GPIO_Driver.h"
 #include "Communication.h"
@@ -22,8 +20,8 @@
 #define REFRESH				3
 
 #define TIME_COFFEE			2
-#define MAX_VALUE_COFFEE 	120
-#define MIN_VALUE_WATER 	120
+#define MAX_VALUE_COFFEE 	230
+#define MIN_VALUE_WATER 	100
 #define WATER_MASK			0b00000010
 #define COFFEE_MASK			0b00000001
 
@@ -113,7 +111,7 @@ int main(void)
     	getTime(&hours_main,&minutes_main,&seconds_main,&tiempo);
     	COMM_bfnReceiveMsg(pointerUART);
 
-    	if(pointerUART != NULL)
+    	if(NULL != pointerUART)
     	{
     	switch(*pointerUART)
     		{
@@ -155,10 +153,18 @@ int main(void)
 			{
 				coffeeState[eMakeCoffee]();
 			}
+			else
+			{
+				//Todavia no es hora de preparar café
+			}
 
 			if((minutes_main != minutes_alarm) || (hours_main != hours_alarm))
 			{
 				cancel = 0;
+			}
+			else
+			{
+				//Si no es hora de la alarma, no se quita el cancelado
 			}
 
 			if ((minutes_main == minutes_set) && (hours_main == hours_set))
@@ -167,25 +173,45 @@ int main(void)
 				cancel = 0;
 				cafe_canceled = 0;
 			}
+			else
+			{
+				//Todavia no es hora de Cancelarlo
+			}
 
 			if(tiempo >= REFRESH)
 			{
 				coffee_water_level = 0;
 				tiempo=0;
-				if(pointerWater != NULL)
+				if(NULL != pointerWater)
 				{
 					ADC_bfnReadADC(0b01100,pointerWater);
 					if(*pointerWater > MIN_VALUE_WATER)
 						coffee_water_level |= 0b00000010;
 				}
-				if(pointerCoffee != NULL)
+				else
+				{
+					//El apuntador apunta a NULL
+				}
+				if(NULL != pointerCoffee)
 				{
 					ADC_bfnReadADC(0b01011,pointerCoffee);
 					if(*pointerCoffee < MAX_VALUE_COFFEE)
 						coffee_water_level |= 0b00000001;
 				}
+				else
+				{
+					//El apuntador apunta a NULL
+				}
 				COMM_bfnSendMsg(&coffee_water_level,sizeof(coffee_water_level));
 			}
+			else
+			{
+				//Todavia no es tiempo de mandar los niveles al celular
+			}
+    	}
+    	else
+    	{
+    		//El apuntador no se inicializo
     	}
     }
     return 0;
@@ -193,10 +219,7 @@ int main(void)
 
 void vfnMakeCoffee(void)
 {
-#if 0
 	if(coffee_water_level == (COFFEE_MASK|WATER_MASK))
-#endif
-	if(1)
 	{
 		cancel = 0;
 		if(making_coffee == 0)
@@ -207,6 +230,14 @@ void vfnMakeCoffee(void)
 			sumarTiempo(&hours_set,&minutes_set,TIME_COFFEE);
 			making_coffee = 1;
 		}
+		else
+		{
+			//Ya se esta haciendo cafe
+		}
+	}
+	else
+	{
+		//La cafetera no esta en condiciones de preparar cafe
 	}
 	return;
 }
@@ -230,6 +261,10 @@ void vfnCancelCoffee(void)
 	if(making_coffee == 1)
 	{
 		cancel = 1;
+	}
+	else
+	{
+		//No se esta haciendo el cafe
 	}
 	cafe_canceled = 1;
 	making_coffee = 0;
@@ -262,9 +297,21 @@ void vfnSetTime(void)
 							seconds_main = (*pointerUART & (~SECONDS));
 							puedo_salir = 0;
 						}
+						else
+						{
+							//No es el dato de los segundos
+						}
 					}
 				}
+				else
+				{
+					//No es el dato de los minutos
+				}
 			}
+		}
+		else
+		{
+			//No es el dato de las horas
 		}
 	}
 	setTime(hours_main,minutes_main,seconds_main);
@@ -294,9 +341,21 @@ void vfnSetAlarm(void)
 							seconds_alarm = (*pointerUART & (~SECONDS));
 							puedo_salir = 0;
 						}
+						else
+						{
+							//No es el dato de los segundos
+						}
 					}
 				}
+				else
+				{
+					//No es el dato de los minutos
+				}
 			}
+		}
+		else
+		{
+			//No es el dato de las horas
 		}
 	}
 	return;
@@ -319,11 +378,11 @@ void vfndefaultState(void)
 	static uint_8 length_default = (sizeof(lcd_default)/sizeof(uint_8));
 	if(tiempo >= REFRESH)
 	{
-		if(making_coffee == 1)
+		if(1 == making_coffee)
 		{
 			printInLCD(&lcd_making_coffee[0],length_making);
 		}
-		else if(cafe_canceled == 1)
+		else if(1 == cafe_canceled)
 		{
 			printInLCD(&lcd_cancel_coffee[0],length_cancel);
 			cafe_canceled = 0;
@@ -336,6 +395,10 @@ void vfndefaultState(void)
 			lcd_default[eMinute_unidades] = (minutes_main%10) + '0';
 			printInLCD(&lcd_default[0],length_default);
 		}
+	}
+	else
+	{
+		//No es tiempo de actualizar la pantalla
 	}
 #endif
 	return;

@@ -3,7 +3,7 @@
 #define SUCCESS 1
 #define ERROR 0
 #include "MKL27Z644.h"
-#include "types.h"
+#include "tools.h"
 uint_8 ADC_bfnReadADC(uint_8 bChannel,uint_8 * bpADCValue);
 void ADC_vfnADCPortInitWater(void);
 void ADC_vfnADCPortInitCoffee(void);

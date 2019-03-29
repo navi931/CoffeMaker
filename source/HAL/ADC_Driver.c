@@ -38,5 +38,9 @@ uint_8 ADC_bfnReadADC(uint_8 bChannel,uint_8 * bpADCValue)
 		*bpADCValue=ADC0->R[0];
 		state = SUCCESS;
 	}
+	else
+	{
+		//No se pudo del modulo de adc
+	}
 	return state;
 }

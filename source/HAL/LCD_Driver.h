@@ -12,7 +12,7 @@
 #define INITCOMMAND 0x30
 #define DISPLAYBUFFER 0x80
 #include "MKL27Z644.h"
-#include "types.h"
+#include "tools.h"
 void delayMs(uint_16 n);
 void LCD_command(uint_8 command);
 void LCD_data(uint_8 data);

@@ -76,7 +76,9 @@ uint_8 UART_bfnRead(uint_8* valor)
 	if(LPUART0->STAT&LPUART_STAT_RDRF_MASK)
 	{
 	        	*valor=LPUART0->DATA;
+#if 0
 	        	LPUART0->DATA=0;
+#endif
 	        	state = SUCCESS;
 	}
 	else

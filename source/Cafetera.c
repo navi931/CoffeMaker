@@ -5,12 +5,7 @@
 #include "LCD_Handler.h"
 #define LCD
 
-
-#define MAKE_COFFEE 		'A'
-#define CANCEL_COFFEE 		'B'
-#define SET_TIME 			0x0F
-#define SET_ALARM 			0x0E
-#define CANCEL_ALARM		'C'
+#define LENGTH				6
 
 #define HOURS 				0b10000000
 #define MINUTES 			0b01000000
@@ -20,10 +15,10 @@
 #define REFRESH				3
 
 #define TIME_COFFEE			2
-#define MAX_VALUE_COFFEE 	230
-#define MIN_VALUE_WATER 	100
-#define WATER_MASK			0b00000010
-#define COFFEE_MASK			0b00000001
+#define MAX_VALUE_COFFEE 	100
+#define MIN_VALUE_WATER 	150
+#define WATER_MASK			0b00000001
+#define COFFEE_MASK			0b00000010
 
 #define DOS_PUNTOS_ASCII 	58
 
@@ -38,11 +33,11 @@ void sumarTiempo(uint_8 * hours,uint_8 * minutes,uint_8 valor);
 
 enum function
 {
-	eMakeCoffee,
+	eMakeCoffee = 'A',
 	eCancelCoffee,
+	eCancelAlarm,
 	eSetTime,
 	eSetAlarm,
-	eCancelAlarm,
 	edefaultState
 };
 
@@ -50,9 +45,9 @@ void (*coffeeState[])(void) =
 {
 	vfnMakeCoffee,							//0
 	vfnCancelCoffee,						//1
-	vfnSetTime,								//2
-	vfnSetAlarm,							//3
-	vfnCancelAlarm,							//4
+	vfnCancelAlarm,							//2
+	vfnSetTime,								//3
+	vfnSetAlarm,							//4
 	vfndefaultState							//5
 };
 
@@ -88,10 +83,11 @@ uint_8 coffee_water_level = 0;
 int main(void)
 {
 
-	uint_8 * pointerWater;
-	uint_8 * pointerCoffee;
-	uint_8 dataWater=0;
-	uint_8 dataCoffee=0;
+	static uint_8 dataWater=0;
+	static uint_8 dataCoffee=0;
+	static uint_8 * pointerWater = &dataWater;
+	static uint_8 * pointerCoffee = &dataCoffee;
+	uint_8 state = edefaultState - 'A';
 
     vfnInitTimer();
     ADC_vfnDriverInit();
@@ -102,60 +98,33 @@ int main(void)
 #ifdef LCD
     InitScreen();
 #endif
-    pointerWater=&dataWater;
-    pointerCoffee=&dataCoffee;
     pointerUART=&datauart;
 
     while(1)
     {
+		*pointerUART = edefaultState;
     	getTime(&hours_main,&minutes_main,&seconds_main,&tiempo);
     	COMM_bfnReceiveMsg(pointerUART);
 
     	if(NULL != pointerUART)
     	{
-    	switch(*pointerUART)
+    		state = *pointerUART - 'A';
+    		if(LENGTH > state)
     		{
-    			case CANCEL_ALARM:
-					{
-						coffeeState[eCancelAlarm]();
-					}
-					break;
-    	    	case MAKE_COFFEE:
-    	    		{
-    	    			coffeeState[eMakeCoffee]();
-    	    		}
-    	    		break;
-    	    	case CANCEL_COFFEE:
-    	    		{
-    	    			coffeeState[eCancelCoffee]();
-    	    		}
-    	    		break;
-    	    	case SET_TIME:
-    				{
-    					coffeeState[eSetTime]();
-    				}
-    	    		break;
-    	    	case SET_ALARM:
-    				{
-    					coffeeState[eSetAlarm]();
-    				}
-    	    		break;
-    	    	default:
-    				{
-    					coffeeState[edefaultState]();
-    				}
-    	    		break;
-    	    }
-
-			*pointerUART = 0;
+    			coffeeState[state]();
+    		}
+    		else
+    		{
+    			//No esta dentro de las opciones de la mÃ¡quina de estados
+    		}
 
 			if((minutes_main == minutes_alarm) && (hours_main == hours_alarm) && (cancel == 0))
 			{
-				coffeeState[eMakeCoffee]();
+				coffeeState[eMakeCoffee - 'A']();
 			}
 			else
 			{
-				//Todavia no es hora de preparar café
+				//Todavia no es hora de preparar cafÃ©
 			}
 
 			if((minutes_main != minutes_alarm) || (hours_main != hours_alarm))
@@ -169,7 +138,7 @@ int main(void)
 
 			if ((minutes_main == minutes_set) && (hours_main == hours_set))
 			{
-				coffeeState[eCancelCoffee]();
+				coffeeState[eCancelCoffee - 'A']();
 				cancel = 0;
 				cafe_canceled = 0;
 			}
@@ -179,35 +148,47 @@ int main(void)
 			}
 
 			if(tiempo >= REFRESH)
-			{
-				coffee_water_level = 0;
-				tiempo=0;
-				if(NULL != pointerWater)
 				{
-					ADC_bfnReadADC(0b01100,pointerWater);
-					if(*pointerWater > MIN_VALUE_WATER)
-						coffee_water_level |= 0b00000010;
+					coffee_water_level = 0;
+					tiempo=0;
+					if(NULL != pointerWater)
+					{
+						ADC_bfnReadADC(0b01100,pointerWater);
+						if(*pointerWater > MIN_VALUE_WATER)
+						{
+							coffee_water_level |= WATER_MASK;
+						}
+						else
+						{
+							//no hay suficiente agua
+						}
+					}
+					else
+					{
+						//El apuntador apunta a NULL
+					}
+					if(NULL != pointerCoffee)
+					{
+						ADC_bfnReadADC(0b01011,pointerCoffee);
+						if(*pointerCoffee < MAX_VALUE_COFFEE)
+						{
+							coffee_water_level |= COFFEE_MASK;
+						}
+						else
+						{
+							//no hay suficiente cafe
+						}
+					}
+					else
+					{
+						//El apuntador apunta a NULL
+					}
+						COMM_bfnSendMsg(&coffee_water_level,sizeof(coffee_water_level));
 				}
 				else
 				{
-					//El apuntador apunta a NULL
+					//Todavia no es tiempo de mandar los niveles al celular
 				}
-				if(NULL != pointerCoffee)
-				{
-					ADC_bfnReadADC(0b01011,pointerCoffee);
-					if(*pointerCoffee < MAX_VALUE_COFFEE)
-						coffee_water_level |= 0b00000001;
-				}
-				else
-				{
-					//El apuntador apunta a NULL
-				}
-				COMM_bfnSendMsg(&coffee_water_level,sizeof(coffee_water_level));
-			}
-			else
-			{
-				//Todavia no es tiempo de mandar los niveles al celular
-			}
     	}
     	else
     	{
@@ -219,10 +200,10 @@ int main(void)
 
 void vfnMakeCoffee(void)
 {
-	if(coffee_water_level == (COFFEE_MASK|WATER_MASK))
+	if((COFFEE_MASK|WATER_MASK) == coffee_water_level)
 	{
 		cancel = 0;
-		if(making_coffee == 0)
+		if(0 == making_coffee)
 		{
 			SetGpio(1);
 			hours_set = hours_main;
@@ -376,6 +357,7 @@ void vfndefaultState(void)
 	static uint_8 length_cancel = ((sizeof(lcd_cancel_coffee) - 1)/sizeof(uint_8));
 	static uint_8  lcd_default [5] = {0,0,DOS_PUNTOS_ASCII,0,0};
 	static uint_8 length_default = (sizeof(lcd_default)/sizeof(uint_8));
+
 	if(tiempo >= REFRESH)
 	{
 		if(1 == making_coffee)
@@ -400,6 +382,7 @@ void vfndefaultState(void)
 	{
 		//No es tiempo de actualizar la pantalla
 	}
+
 #endif
 	return;
 }

@@ -15,7 +15,7 @@
 #define REFRESH				3
 
 #define TIME_COFFEE			2
-#define MAX_VALUE_COFFEE 	100
+#define MAX_VALUE_COFFEE 	150
 #define MIN_VALUE_WATER 	150
 #define WATER_MASK			0b00000001
 #define COFFEE_MASK			0b00000010
